@@ -117,5 +117,6 @@ npm run dev
 
 ### Aggregations (`/api/aggregations`)
 - `GET /api/aggregations/interests` - Group users by interests (Scenario 1)
-- `GET /api/aggregations/user-posts/:userId` - Retrieve user posts via `$lookup` (Scenario 2)
+- `GET /api/aggregations/users-list` - Get list of users (ID, username, email) for easy lookup testing
+- `GET /api/aggregations/user-posts/:identifier` - Retrieve user posts via `$lookup` (Scenario 2 - supports MongoDB ObjectId, Username, or Email)
 - `POST /api/aggregations/posts` - Create a test post (Requires Auth)
