@@ -32,6 +32,7 @@ export default function Home() {
 
   // Aggregation states
   const [groupedInterests, setGroupedInterests] = useState<any[]>([]);
+  const [testUsers, setTestUsers] = useState<any[]>([]);
   const [selectedUserIdForLookup, setSelectedUserIdForLookup] = useState('');
   const [lookupResult, setLookupResult] = useState<any>(null);
   const [postTitle, setPostTitle] = useState('');
@@ -55,6 +56,7 @@ export default function Home() {
       else fetchAdminNotes();
     } else if (view === 'aggregations') {
       fetchInterestsAggregation();
+      fetchTestUsers();
     }
   }, [token, view, notePage, adminTab]);
 
@@ -174,6 +176,15 @@ export default function Home() {
     }
   };
 
+  const fetchTestUsers = async () => {
+    try {
+      const res = await api.get('/aggregations/users-list');
+      setTestUsers(res.data);
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+
   const handleLookupPosts = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUserIdForLookup) return;
@@ -193,6 +204,7 @@ export default function Home() {
       setPostTitle('');
       setPostContent('');
       alert('Post created successfully!');
+      fetchTestUsers();
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to create post');
     }
@@ -603,10 +615,31 @@ export default function Home() {
                 </div>
               )}
 
+              {/* Quick reference list of test users */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quick User Reference (Click any user to test lookup):
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {testUsers.map((u) => (
+                    <button
+                      key={u._id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedUserIdForLookup(u._id);
+                      }}
+                      className="px-3 py-1 bg-gray-100 hover:bg-indigo-100 hover:text-indigo-700 text-xs rounded border border-gray-200 text-gray-700 transition-colors"
+                    >
+                      {u.username} ({u.email})
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <form onSubmit={handleLookupPosts} className="flex gap-2 mb-4">
                 <input
                   type="text"
-                  placeholder="Enter User ID (ObjectId)"
+                  placeholder="Enter User ID (ObjectId) OR Username OR Email"
                   value={selectedUserIdForLookup}
                   onChange={(e) => setSelectedUserIdForLookup(e.target.value)}
                   required
@@ -620,7 +653,7 @@ export default function Home() {
               {lookupResult && (
                 <div className="p-4 border border-gray-200 rounded bg-gray-50">
                   <h4 className="font-bold text-gray-900">User: {lookupResult.username} ({lookupResult.email})</h4>
-                  <p className="text-xs text-gray-500 mb-3">Role: {lookupResult.role}</p>
+                  <p className="text-xs text-gray-500 mb-3">Role: {lookupResult.role} | ID: {lookupResult._id}</p>
                   <h5 className="font-semibold text-gray-800 mb-2">Posts via $lookup:</h5>
                   {lookupResult.posts?.length === 0 ? (
                     <p className="text-sm text-gray-500">No posts found for this user.</p>

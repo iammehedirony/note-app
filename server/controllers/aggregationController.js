@@ -32,16 +32,20 @@ const getUsersByInterests = async (req, res) => {
 
 // Scenario 2: User Posts ($lookup)
 // Constraint: Use a single aggregation pipeline with a $lookup stage.
+// Supports both ObjectId and username/email for easy testing.
 const getUserPostsWithLookup = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { identifier } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ error: 'Invalid user ID format.' });
+    let matchCondition = {};
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+      matchCondition = { _id: new mongoose.Types.ObjectId(identifier) };
+    } else {
+      matchCondition = { $or: [{ username: identifier }, { email: identifier }] };
     }
 
     const result = await User.collection.aggregate([
-      { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+      { $match: matchCondition },
       {
         $lookup: {
           from: 'posts',
@@ -58,10 +62,20 @@ const getUserPostsWithLookup = async (req, res) => {
     ]).toArray();
 
     if (!result || result.length === 0) {
-      return res.status(404).json({ error: 'User not found.' });
+      return res.status(404).json({ error: 'User not found by ID, username, or email.' });
     }
 
     res.json(result[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Helper to list users for easy testing of aggregation scenario 2
+const getUsersListForTesting = async (req, res) => {
+  try {
+    const users = await User.find({}, { username: 1, email: 1, role: 1 });
+    res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -83,4 +97,4 @@ const createPost = async (req, res) => {
   }
 };
 
-module.exports = { getUsersByInterests, getUserPostsWithLookup, createPost };
+module.exports = { getUsersByInterests, getUserPostsWithLookup, getUsersListForTesting, createPost };
